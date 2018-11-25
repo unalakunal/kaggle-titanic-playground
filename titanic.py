@@ -37,9 +37,8 @@ val_y = val_df[_class]
 val_x = val_df[_features]
 test_x = test_df[_features]
 
-# create Imputer to change NaN val.s with their mean
+# use Imputer to change NaN val.s with column mean val.s
 imp = Imputer(missing_values='NaN', strategy='mean', axis=0)
-
 imp = imp.fit(train_x)
 train_x_imp = imp.fit(train_x).transform(train_x)
 val_x_imp = imp.fit(val_x).transform(val_x)
@@ -53,3 +52,11 @@ pred_val_y = dtree.predict(val_x_imp)
 # calculate accuracy for validation set
 report = classification_report(y_true=val_y, y_pred=pred_val_y)
 print("report", report)
+
+# predict for test data
+pred_y = dtree.predict(test_x_imp)
+
+# create result csv file w/ columns=["PassengerId","Survived"]
+res = pd.DataFrame(test_df["PassengerId"])
+res = res.assign(Survived=pd.Series(pred_y)).set_index("PassengerId")
+res.to_csv("pred.csv")
