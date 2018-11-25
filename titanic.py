@@ -2,9 +2,10 @@
 
 import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import GridSearchCV
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
 from sklearn.preprocessing import Imputer
-from sklearn.model_selection import GridSearchCV
 import math
 
 _class = "Survived"
@@ -24,7 +25,7 @@ dev_df = pd.read_csv("data/train.csv")
 test_df = pd.read_csv("data/test.csv")
 
 
-def get_report_for_val(clf, x, y, printout=False, to_file=False):
+def generate_report(clf, x, y, printout=False, to_file=False):
     """
     Predicts for validation set and calculates 
     precision,recall,f1-score and support
@@ -96,12 +97,12 @@ def write_file(pred_y, fname="res"):
 def main():
     train_x, train_y, val_x, val_y, test_x = preprocess()
 
-    # train decision tree w/ gini index as classifier
+    # decision tree
     dtree = DecisionTreeClassifier(criterion="gini")
     dtree.fit(train_x, train_y)
-    get_report_for_val(dtree, val_x, val_y, printout=True, to_file=True)
+    generate_report(dtree, val_x, val_y, printout=True, to_file=True)
 
-    # use grid search to optimize hyperparam.s
+    # grid search on top of decision tree
     grid_dtree = GridSearchCV(
         DecisionTreeClassifier(criterion="gini"),
         param_grid={
@@ -111,13 +112,20 @@ def main():
         },
         n_jobs=8
     )
-    grid_dtree.fit(X=train_x, y=train_y)
+    grid_dtree.fit(train_x, train_y)
     print("grid search best param.s", grid_dtree.best_params_)
     print("grid search best score", grid_dtree.best_score_)
-    get_report_for_val(grid_dtree, val_x, val_y, printout=True, to_file=True)
+    generate_report(grid_dtree, val_x, val_y, printout=True, to_file=True)
 
+    # random forests
+    rforests = RandomForestClassifier(n_estimators=100)
+    rforests.fit(train_x, train_y)
+    generate_report(rforests, val_x, val_y, printout=True, to_file=True)
+
+    # predict test data
     pred_y_dtree = predict_test(dtree, test_x, to_file=True)
     pred_y_dtree = predict_test(grid_dtree, test_x, to_file=True)
+    pred_y_dtree = predict_test(rforests, test_x, to_file=True)
 
 
 if __name__ == "__main__":
