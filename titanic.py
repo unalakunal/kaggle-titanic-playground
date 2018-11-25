@@ -20,11 +20,11 @@ def enum_embarked(df):
 
 
 # get the dataframes
-dev_df = pd.read_csv("train.csv")
-test_df = pd.read_csv("test.csv")
+dev_df = pd.read_csv("data/train.csv")
+test_df = pd.read_csv("data/test.csv")
 
 
-def get_report_for_val(clf, x, y, printout=False):
+def get_report_for_val(clf, x, y, printout=False, to_file=False):
     """
     Predicts for validation set and calculates 
     precision,recall,f1-score and support
@@ -40,7 +40,9 @@ def get_report_for_val(clf, x, y, printout=False):
     report = classification_report(y_true=y, y_pred=pred_val_y)
     if printout:
         print(report)
-    return report
+    if to_file:
+        with open("report/report_" + clf_name, "w") as f:
+            f.write(report)
 
 
 def preprocess():
@@ -88,7 +90,7 @@ def write_file(pred_y, fname="res"):
     # create result csv file w/ columns=["PassengerId","Survived"]
     res = pd.DataFrame(test_df["PassengerId"])
     res = res.assign(Survived=pd.Series(pred_y)).set_index("PassengerId")
-    res.to_csv(fname + ".csv")
+    res.to_csv("pred/" + fname + ".csv")
 
 
 def main():
@@ -97,7 +99,7 @@ def main():
     # train decision tree w/ gini index as classifier
     dtree = DecisionTreeClassifier(criterion="gini")
     dtree.fit(train_x, train_y)
-    get_report_for_val(dtree, val_x, val_y, printout=True)
+    get_report_for_val(dtree, val_x, val_y, printout=True, to_file=True)
 
     # use grid search to optimize hyperparam.s
     grid_dtree = GridSearchCV(
@@ -112,7 +114,7 @@ def main():
     grid_dtree.fit(X=train_x, y=train_y)
     print("grid search best param.s", grid_dtree.best_params_)
     print("grid search best score", grid_dtree.best_score_)
-    get_report_for_val(grid_dtree, val_x, val_y, printout=True)
+    get_report_for_val(grid_dtree, val_x, val_y, printout=True, to_file=True)
 
     pred_y_dtree = predict_test(dtree, test_x, to_file=True)
     pred_y_dtree = predict_test(grid_dtree, test_x, to_file=True)
